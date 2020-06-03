@@ -428,26 +428,17 @@ backend {{genBackendNamePrefix $cfg.TLSTermination}}:{{$cfgIdx}}
     {{- end }}
 
   timeout check 5000ms
-  {{- if isTrue (index $cfg.Annotations "haproxy.router.openshift.io/preserve-x-forwarded-host") }}
+  {{- if isTrue (index $cfg.Annotations "haproxy.router.openshift.io/preserve-x-forwarded-headers") }}
   http-request add-header X-Forwarded-Host %[req.hdr(host)]
-  {{- else }}
-  http-request set-header X-Forwarded-Host %[req.hdr(host)]
-  {{- end }}
-  {{- if isTrue (index $cfg.Annotations "haproxy.router.openshift.io/preserve-x-forwarded-port") }}
   http-request add-header X-Forwarded-Port %[dst_port]
-  {{- else }}
-  http-request set-header X-Forwarded-Port %[dst_port]
-  {{- end }}
-  {{- if isTrue (index $cfg.Annotations "haproxy.router.openshift.io/preserve-x-forwarded-proto") }}
   http-request add-header X-Forwarded-Proto http if !{ ssl_fc }
   http-request add-header X-Forwarded-Proto https if { ssl_fc }
-  {{- else }}
-  http-request set-header X-Forwarded-Proto http if !{ ssl_fc }
-  http-request set-header X-Forwarded-Proto https if { ssl_fc }
-  {{- end }}
-  {{- if isTrue (index $cfg.Annotations "haproxy.router.openshift.io/preserve-x-forwarded-proto-version") }}
   http-request add-header X-Forwarded-Proto-Version h2 if { ssl_fc_alpn -i h2 }
   {{- else }}
+  http-request set-header X-Forwarded-Host %[req.hdr(host)]
+  http-request set-header X-Forwarded-Port %[dst_port]
+  http-request set-header X-Forwarded-Proto http if !{ ssl_fc }
+  http-request set-header X-Forwarded-Proto https if { ssl_fc } 
   http-request set-header X-Forwarded-Proto-Version h2 if { ssl_fc_alpn -i h2 }
   {{- end }}
   {{- if matchPattern "(v4)?v6" $router_ip_v4_v6_mode }}
